@@ -1,9 +1,9 @@
-#! /usr/bin/env python
+#!python
 
 from __future__ import division, print_function
 
-from dipy.workflows.denoise import NLMeansFlow
 from dipy.workflows.flow_runner import run_flow
+from dipy.workflows.tracking import DetTrackFlow
 
 if __name__ == "__main__":
-    run_flow(NLMeansFlow())
+    run_flow(DetTrackFlow())
