@@ -15,10 +15,12 @@ from dipy.utils.arrfuncs import pinv, eigh
 from dipy.data import get_sphere
 from ..core.gradients import gradient_table
 from ..core.geometry import vector_norm
-from ..core.sphere import Sphere
 from .vec_val_sum import vec_val_vect
 from ..core.onetime import auto_attr
 from .base import ReconstModel
+
+
+MIN_POSITIVE_SIGNAL = 0.0001
 
 
 def _roll_evals(evals, axis=-1):
@@ -47,28 +49,6 @@ def _roll_evals(evals, axis=-1):
     evals = np.rollaxis(evals, axis)
 
     return evals
-
-
-def _min_positive_signal(data):
-    """ Helper function to establish the minimum positive signal of a given
-    data
-
-    Parameters
-    ----------
-    data: array ([X, Y, Z, ...], g)
-        Data or response variables holding the data. Note that the last
-        dimension should contain the data.
-
-    Returns
-    -------
-    min_signal : float
-        Minimum positive signal of the given data
-    """
-    data = data.ravel()
-    if np.all(data == 0):
-        return 0.0001
-    else:
-        return data[data > 0].min()
 
 
 def fractional_anisotropy(evals, axis=-1):
@@ -702,7 +682,7 @@ class TensorModel(ReconstModel):
 
         fit_method : str or callable
             str can be one of the following:
-            
+
             'WLS' for weighted least squares
                 :func:`dti.wls_fit_tensor`
             'LS' or 'OLS' for ordinary least squares
@@ -725,14 +705,16 @@ class TensorModel(ReconstModel):
 
         Note
         -----
-        In order to increase speed of processing, tensor fitting is done simultaneously
-        over many voxels. Many fit_methods use the 'step' parameter to set the number of
-        voxels that will be fit at once in each iteration. This is the chunk size as a 
-        number of voxels. A larger step value should speed things up, but it will also 
-        take up more memory. It is advisable to keep an eye on memory consumption as 
-        this value is increased.
+        In order to increase speed of processing, tensor fitting is done
+        simultaneously over many voxels. Many fit_methods use the 'step'
+        parameter to set the number of voxels that will be fit at once in each
+        iteration. This is the chunk size as a number of voxels. A larger step
+        value should speed things up, but it will also take up more memory. It
+        is advisable to keep an eye on memory consumption as this value is
+        increased.
 
-        Example : In :func:`iter_fit_tensor` we have a default step value of 1e4            
+        Example : In :func:`iter_fit_tensor` we have a default step value of
+        1e4
 
         References
         ----------
@@ -790,7 +772,7 @@ class TensorModel(ReconstModel):
             data_in_mask = np.reshape(data[mask], (-1, data.shape[-1]))
 
         if self.min_signal is None:
-            min_signal = _min_positive_signal(data)
+            min_signal = MIN_POSITIVE_SIGNAL
         else:
             min_signal = self.min_signal
 
@@ -1093,17 +1075,24 @@ class TensorFit(object):
            Resolution Diffusion MRI: from Local Estimation to Segmentation and
            Tractography. ftp://ftp-sop.inria.fr/athena/Publications/PhDs/descoteaux_thesis.pdf
         """
-        lower = 4 * np.pi * np.sqrt(np.prod(self.evals, -1))
-        projection = np.dot(sphere.vertices, self.evecs)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            projection /= np.sqrt(self.evals)
-            odf = (vector_norm(projection) ** -3) / lower
-        # Zero evals are non-physical, we replace nans with zeros
-        any_zero = (self.evals == 0).any(-1)
-        odf = np.where(any_zero, 0, odf)
-        # Move odf to be on the last dimension
-        odf = np.rollaxis(odf, 0, odf.ndim)
+        odf = np.zeros((self.evals.shape[:-1] + (sphere.vertices.shape[0],)))
+        if len(self.evals.shape) > 1:
+            mask = np.where((self.evals[..., 0] > 0) &
+                            (self.evals[..., 1] > 0) &
+                            (self.evals[..., 2] > 0))
+            evals = self.evals[mask]
+            evecs = self.evecs[mask]
+        else:
+            evals = self.evals
+            evecs = self.evecs
+        lower = 4 * np.pi * np.sqrt(np.prod(evals, -1))
+        projection = np.dot(sphere.vertices, evecs)
+        projection /= np.sqrt(evals)
+        result = ((vector_norm(projection) ** -3) / lower).T
+        if len(self.evals.shape) > 1:
+            odf[mask] = result
+        else:
+            odf = result
         return odf
 
     def adc(self, sphere):
@@ -1147,13 +1136,15 @@ class TensorFit(object):
            all voxels.
 
         step : int
-            The chunk size as a number of voxels. Optional parameter with default value 10,000.
+            The chunk size as a number of voxels. Optional parameter with
+            default value 10,000.
 
-            In order to increase speed of processing, tensor fitting is done simultaneously
-            over many voxels. This parameter sets the number of voxels that will be fit at 
-            once in each iteration. A larger step value should speed things up, but it will 
-            also take up more memory. It is advisable to keep an eye on memory consumption 
-            as this value is increased.
+            In order to increase speed of processing, tensor fitting is done
+            simultaneously over many voxels. This parameter sets the number of
+            voxels that will be fit at once in each iteration. A larger step
+            value should speed things up, but it will also take up more memory.
+            It is advisable to keep an eye on memory consumption as this value
+            is increased.
 
         Notes
         -----
@@ -1204,13 +1195,15 @@ def iter_fit_tensor(step=1e4):
     Parameters
     ----------
     step : int
-        The chunk size as a number of voxels. Optional parameter with default value 10,000.
+        The chunk size as a number of voxels. Optional parameter with default
+        value 10,000.
 
-        In order to increase speed of processing, tensor fitting is done simultaneously
-        over many voxels. This parameter sets the number of voxels that will be fit at 
-        once in each iteration. A larger step value should speed things up, but it will 
-        also take up more memory. It is advisable to keep an eye on memory consumption 
-        as this value is increased.
+        In order to increase speed of processing, tensor fitting is done
+        simultaneously over many voxels. This parameter sets the number of
+        voxels that will be fit at once in each iteration. A larger step value
+        should speed things up, but it will also take up more memory. It is
+        advisable to keep an eye on memory consumption as this value is
+        increased.
     """
 
     def iter_decorator(fit_tensor):
@@ -1253,7 +1246,8 @@ def iter_fit_tensor(step=1e4):
             data = data.reshape(-1, data.shape[-1])
             dtiparams = np.empty((size, 12), dtype=np.float64)
             for i in range(0, size, step):
-                dtiparams[i:i + step] = fit_tensor(design_matrix, data[i:i + step],
+                dtiparams[i:i + step] = fit_tensor(design_matrix,
+                                                   data[i:i + step],
                                                    *args, **kwargs)
             return dtiparams.reshape(shape + (12, ))
 
@@ -1513,6 +1507,51 @@ def _nlls_jacobian_func(tensor, design_matrix, data, *arg, **kwargs):
     return -pred[:, None] * design_matrix
 
 
+def _decompose_tensor_nan(tensor, tensor_alternative, min_diffusivity=0):
+    """ Helper function that expands the function decompose_tensor to deal
+    with tensor with nan elements.
+
+    Computes tensor eigen decomposition to calculate eigenvalues and
+    eigenvectors (Basser et al., 1994a). Some fit approaches can produce nan
+    tensor elements in background voxels (particularly non-linear approachs).
+    This function avoids the eigen decomposition errors of nan tensor elements
+    by replacing tensor with nan elements by a given alternative tensor
+    estimate.
+
+    Parameters
+    ----------
+    tensor : array (3, 3)
+        Hermitian matrix representing a diffusion tensor.
+    tensor_alternative : array (3, 3)
+        Hermitian matrix representing a diffusion tensor obtain from an
+        approach that does not produce nan tensor elements
+    min_diffusivity : float
+        Because negative eigenvalues are not physical and small eigenvalues,
+        much smaller than the diffusion weighting, cause quite a lot of noise
+        in metrics such as fa, diffusivity values smaller than
+        `min_diffusivity` are replaced with `min_diffusivity`.
+
+    Returns
+    -------
+    eigvals : array (3)
+        Eigenvalues from eigen decomposition of the tensor. Negative
+        eigenvalues are replaced by zero. Sorted from largest to smallest.
+    eigvecs : array (3, 3)
+        Associated eigenvectors from eigen decomposition of the tensor.
+        Eigenvectors are columnar (e.g. eigvecs[..., :, j] is associated with
+        eigvals[..., j])
+
+    """
+    try:
+        evals, evecs = decompose_tensor(tensor[:6],
+                                        min_diffusivity=min_diffusivity)
+
+    except np.linalg.LinAlgError:
+        evals, evecs = decompose_tensor(tensor_alternative[:6],
+                                        min_diffusivity=min_diffusivity)
+    return evals, evecs
+
+
 def nlls_fit_tensor(design_matrix, data, weighting=None,
                     sigma=None, jac=True):
     """
@@ -1713,18 +1752,11 @@ def restore_fit_tensor(design_matrix, data, sigma=None, jac=True):
                                                             this_sigma))
 
         # The parameters are the evals and the evecs:
-        try:
-            evals, evecs = decompose_tensor(
-                from_lower_triangular(this_tensor[:6]))
-            dti_params[vox, :3] = evals
-            dti_params[vox, 3:] = evecs.ravel()
-        # If leastsq failed to converge and produced nans, we'll resort to the
-        # OLS solution in this voxel:
-        except np.linalg.LinAlgError:
-            evals, evecs = decompose_tensor(
-                from_lower_triangular(start_params[:6]))
-            dti_params[vox, :3] = evals
-            dti_params[vox, 3:] = evecs.ravel()
+        evals, evecs = _decompose_tensor_nan(
+            from_lower_triangular(this_tensor[:6]),
+            from_lower_triangular(start_params[:6]))
+        dti_params[vox, :3] = evals
+        dti_params[vox, 3:] = evecs.ravel()
 
     dti_params.shape = data.shape[:-1] + (12,)
     restore_params = dti_params

@@ -11,7 +11,8 @@ import scipy.optimize as opt
 from dipy.reconst.base import ReconstModel
 
 from dipy.reconst.dti import (TensorFit, design_matrix, decompose_tensor,
-                              from_lower_triangular, lower_triangular)
+                              _decompose_tensor_nan, from_lower_triangular,
+                              lower_triangular)
 from dipy.reconst.dki import _positive_evals
 
 from dipy.reconst.vec_val_sum import vec_val_vect
@@ -279,7 +280,7 @@ def wls_iter(design_matrix, sig, S0, Diso=3e-3, mdreg=2.7e-3,
 
     md = (params[0] + params[2] + params[5]) / 3
     # Process voxel if it has significant signal from tissue
-    if md < mdreg and np.mean(sig) > min_signal:
+    if md < mdreg and np.mean(sig) > min_signal and S0 > min_signal:
         # General free-water signal contribution
         fwsig = np.exp(np.dot(design_matrix,
                               np.array([Diso, 0, Diso, 0, 0, Diso, 0])))
@@ -596,7 +597,7 @@ def nls_iter(design_matrix, sig, S0, Diso=3e-3, mdreg=2.7e-3,
                       min_signal=min_signal, Diso=Diso, mdreg=mdreg)
 
     # Process voxel if it has significant signal from tissue
-    if params[12] < 0.99 and np.mean(sig) > min_signal:
+    if params[12] < 0.99 and np.mean(sig) > min_signal and S0 > min_signal:
         # converting evals and evecs to diffusion tensor elements
         evals = params[:3]
         evecs = params[3:12].reshape((3, 3))
@@ -626,18 +627,21 @@ def nls_iter(design_matrix, sig, S0, Diso=3e-3, mdreg=2.7e-3,
                                                     weighting, sigma, cholesky,
                                                     f_transform))
 
-        # Invert the cholesky decomposition if this was requested
+        # Process tissue diffusion tensor
         if cholesky:
             this_tensor[:6] = cholesky_to_lower_triangular(this_tensor[:6])
 
-        # Invert f transformation if this was requested
-        if f_transform:
-            this_tensor[7] = 0.5 * (1 + np.sin(this_tensor[7] - np.pi/2))
+        evals, evecs = _decompose_tensor_nan(
+            from_lower_triangular(this_tensor[:6]),
+            from_lower_triangular(start_params[:6]))
 
-        # The parameters are the evals and the evecs:
-        evals, evecs = decompose_tensor(from_lower_triangular(this_tensor[:6]))
+        # Process water volume fraction f
+        f = this_tensor[7]
+        if f_transform:
+            f = 0.5 * (1 + np.sin(f - np.pi/2))        
+        
         params = np.concatenate((evals, evecs[0], evecs[1], evecs[2],
-                                 np.array([this_tensor[7]])), axis=0)
+                                 np.array([f])), axis=0)
     return params
 
 
