@@ -55,7 +55,7 @@ class FODFPipelineFSL(CombinedWorkflow):
             # Masking
             be_flow = BrainExtraction(**flow_base_params)
             self.run_sub_flow(be_flow, dwi, out_dir=out_dir)
-            dwi_mask, _ = be_flow.last_generated_outputs[0]
+            dwi_mask = be_flow.last_generated_outputs['out_mask']
 
             # Denoising
             skip_denoise = True
@@ -65,7 +65,7 @@ class FODFPipelineFSL(CombinedWorkflow):
                                   skip=skip_denoise)
 
             self.run_sub_flow(nl_flow, dwi, out_dir=out_dir)
-            denoised = nl_flow.last_generated_outputs[0][0]
+            denoised = nl_flow.last_generated_outputs['out_denoised']
 
             # DTI reconstruction
             dti_flow = ReconstDtiFlow(output_strategy='append',
