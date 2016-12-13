@@ -216,6 +216,7 @@ def main(**extra_args):
           scripts      = [pjoin('bin', 'dipy_reconst_dti'),
                           pjoin('bin', 'dipy_median_otsu'),
                           pjoin('bin', 'dipy_nlmeans'),
+                          pjoin('bin', 'dipy_fodf_pipeline_fsl')
                           ],
 
           cmdclass = cmdclass,
