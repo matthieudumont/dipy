@@ -38,8 +38,7 @@ class ConvertDicomFlow(Workflow):
     def get_short_name(cls):
         return 'convert_dicom'
 
-    def run(self, input_files, tag, out_dir='',
-            out_file='dwi.nii.gz'):
+    def run(self, input_files, tag, out_dir='', out_file='dwi.nii.gz'):
         """ Workflow for converting dicom files to nifti.
 
         Parameters
@@ -51,6 +50,8 @@ class ConvertDicomFlow(Workflow):
             Tag to find in the mrconvert output.
         out_dir : string, optional
             Output directory (default input file directory)
+        out_file : string, optional
+            Output file to be converted.
         """
 
         io_it = self.get_io_iterator()
