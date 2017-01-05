@@ -34,7 +34,8 @@ def convert_dicom(dicom_path, dicom_index, out_path):
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     _, stdout = proc.communicate(input=str(dicom_index))
-
+    print stdout
+    
     return '[ERROR]' not in stdout
 
 
