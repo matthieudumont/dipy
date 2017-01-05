@@ -31,7 +31,8 @@ def convert_dicom(dicom_path, dicom_index, out_path):
     command_list = command.split(' ')
 
     print command_list
-    proc = subprocess.Popen(command_list)
+    proc = subprocess.Popen(command_list, stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc.communicate(input=str(dicom_index))
 
 class ConvertDicomFlow(Workflow):
