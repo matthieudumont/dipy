@@ -131,6 +131,8 @@ class DICOMFODFPipelineFSL(CombinedWorkflow):
         }
 
         for dicom_dwi in io_it:
+            dicom_dwi = dicom_dwi[0]
+
             # Volume conversion
             dicom_flow = ConvertDicomFlow(**flow_base_params)
             self.run_sub_flow(dicom_flow, dicom_dwi, out_dir=out_dir)
