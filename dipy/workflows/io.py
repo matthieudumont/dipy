@@ -17,7 +17,8 @@ def get_dicom_index(image_path, requested_tag):
     _, stdout = proc.communicate(input='q')
 
     dicom_idx = None
-    tags_regex = re.compile(r'(\d+)\s+-.*:\d\d (' + requested_tag + r') \(\*')
+
+    tags_regex = re.compile(r'(\d+)\s+-.*:\d\d (' + requested_tag + r') \(')
     for idx, tag in tags_regex.findall(stdout):
         if tag == requested_tag:
             dicom_idx = idx
