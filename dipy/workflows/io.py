@@ -57,6 +57,6 @@ class ConvertDicomFlow(Workflow):
 
         io_it = self.get_io_iterator()
 
-        for vol in io_it:
+        for vol, out_file in io_it:
             dicom_idx = get_dicom_index(vol, tag)
             convert_dicom(vol, dicom_idx, out_file)
