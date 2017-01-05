@@ -27,7 +27,7 @@ def get_dicom_index(image_path, requested_tag):
 
 
 def convert_dicom(dicom_path, dicom_index, out_path):
-    command = 'mrconvert {0} {1} -datatype uint16'.format(dicom_path, out_path)
+    command = 'mrconvert {0} {1} -datatype uint16 -force'.format(dicom_path, out_path)
     command_list = command.split(' ')
 
     proc = subprocess.Popen(command_list, stdin=subprocess.PIPE,
