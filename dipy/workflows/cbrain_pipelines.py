@@ -136,7 +136,7 @@ class DICOMFODFPipelineFSL(CombinedWorkflow):
             # Volume conversion
             dicom_flow = ConvertDicomFlow(**flow_base_params)
             self.run_sub_flow(dicom_flow, dicom_dwi, out_dir=out_dir)
-            dwi = dicom_flow.last_generated_outputs['out_mask']
+            dwi = dicom_flow.last_generated_outputs['out_file']
 
             # Gradients Extraction
             gradients_flow = ExtractGradientInfoFlow(**flow_base_params)
