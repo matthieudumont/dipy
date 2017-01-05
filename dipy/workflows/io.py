@@ -32,6 +32,7 @@ def convert_dicom(dicom_path, dicom_index, out_path):
 
     proc = subprocess.Popen(command_list, stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
     _, stdout = proc.communicate(input=str(dicom_index))
 
     return '[ERROR]' not in stdout
@@ -42,7 +43,8 @@ class ConvertDicomFlow(Workflow):
     def get_short_name(cls):
         return 'convert_dicom'
 
-    def run(self, input_files, tag='ep2d_diff_mddw_20_p2', out_dir='', out_file='dwi.nii.gz'):
+    def run(self, input_files, tag='', out_dir='',
+            out_file='dwi.nii.gz'):
         """ Workflow for converting dicom files to nifti.
 
         Parameters
@@ -51,7 +53,7 @@ class ConvertDicomFlow(Workflow):
             Path to the input volumes. This path may contain wildcards to
             process multiple inputs at once.
         tag : string optional
-            Tag to find in the mrconvert output (default ep2d_diff_mddw_20_p2)
+            Tag to find in the mrconvert output (default '')
         out_dir : string, optional
             Output directory (default input file directory)
         out_file : string, optional
@@ -61,13 +63,16 @@ class ConvertDicomFlow(Workflow):
         io_it = self.get_io_iterator()
 
         for vol, out_file in io_it:
-            dicom_idx = get_dicom_index(vol, tag)
+            dicom_idx = None
+            if tag is not '':
+                dicom_idx = get_dicom_index(vol, tag)
+
             success = convert_dicom(vol, dicom_idx, out_file)
             if success:
                 logging.info('Converted {0} to {1} successfully!'.
                              format(vol, out_file))
             else:
-                logging.error('Could not convert {0} using the {1} tag.'
-                              'Please make sure the tag exists ion the dicom '
+                logging.error('Could not convert {0} using the {1} tag. '
+                              'Please make sure the tag exists in the dicom '
                               'file.'.format(vol, tag))
 
