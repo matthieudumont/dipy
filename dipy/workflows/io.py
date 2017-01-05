@@ -30,6 +30,7 @@ def convert_dicom(dicom_path, dicom_index, out_path):
     command = 'mrconvert {0} {1} -datatype uint16 {2}'.format(dicom_path, out_path, dicom_index)
     command_list = command.split(' ')
 
+    print command_list
     subprocess.call(command_list)
 
 
