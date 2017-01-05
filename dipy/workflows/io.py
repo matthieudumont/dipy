@@ -32,9 +32,10 @@ def convert_dicom(dicom_path, dicom_index, out_path):
 
     proc = subprocess.Popen(command_list, stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stderr, stdout = proc.communicate(input=str(dicom_index))
-    print stderr
-    print stdout
+    _, stdout = proc.communicate(input=str(dicom_index))
+
+    return '[ERROR]' not in stdout
+
 
 class ConvertDicomFlow(Workflow):
     @classmethod
@@ -61,5 +62,12 @@ class ConvertDicomFlow(Workflow):
 
         for vol, out_file in io_it:
             dicom_idx = get_dicom_index(vol, tag)
-            convert_dicom(vol, dicom_idx, out_file)
+            success = convert_dicom(vol, dicom_idx, out_file)
+            if success:
+                logging.info('Converted {0} to {1} successfully!'.
+                             format(vol, out_file))
+            else:
+                logging.error('Could not convert {0} using the {1} tag.'
+                              'Please make sure the tag exists ion the dicom '
+                              'file.'.format(vol, tag))
 
