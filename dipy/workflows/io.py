@@ -30,10 +30,11 @@ def convert_dicom(dicom_path, dicom_index, out_path):
     command = 'mrconvert {0} {1} -datatype uint16'.format(dicom_path, out_path)
     command_list = command.split(' ')
 
-    print command_list
     proc = subprocess.Popen(command_list, stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    proc.communicate(input=str(dicom_index))
+    stderr, stdout = proc.communicate(input=str(dicom_index))
+    print stderr
+    print stdout
 
 class ConvertDicomFlow(Workflow):
     @classmethod
@@ -61,3 +62,4 @@ class ConvertDicomFlow(Workflow):
         for vol, out_file in io_it:
             dicom_idx = get_dicom_index(vol, tag)
             convert_dicom(vol, dicom_idx, out_file)
+
