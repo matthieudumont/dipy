@@ -142,7 +142,7 @@ class DICOMFODFPipelineFSL(CombinedWorkflow):
 
             # Gradients Extraction
             gradients_flow = ExtractGradientInfoFlow(**flow_base_params)
-            self.run_sub_flow(gradients_flow, dicom_dwi, out_dir=out_dir)
+            self.run_sub_flow(gradients_flow, dicom_dwi, tag=tag, out_dir=out_dir)
             bval = gradients_flow.last_generated_outputs['out_bval']
             bvec = gradients_flow.last_generated_outputs['out_bvec']
 
