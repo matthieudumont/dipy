@@ -105,7 +105,7 @@ class DICOMFODFPipelineFSL(CombinedWorkflow):
             ReconstCSDFlow
         ]
 
-    def run(self, input_files, out_dir=''):
+    def run(self, input_files, tag='', out_dir=''):
         """ A simple dwi processing pipeline with the following steps:
             -Denoising
             -Masking
@@ -119,6 +119,8 @@ class DICOMFODFPipelineFSL(CombinedWorkflow):
         input_files : string
             Path to the dicom dwi. This path may contain wildcards to process
             multiple inputs at once.
+        tag : string optional
+            Tag to find if there is multiple series in the dicom. (default '')
         out_dir : string, optional
             Working directory (default input file directory)
         """
@@ -135,7 +137,7 @@ class DICOMFODFPipelineFSL(CombinedWorkflow):
 
             # Volume conversion
             dicom_flow = ConvertDicomFlow(**flow_base_params)
-            self.run_sub_flow(dicom_flow, dicom_dwi, out_dir=out_dir)
+            self.run_sub_flow(dicom_flow, dicom_dwi, tag=tag, out_dir=out_dir)
             dwi = dicom_flow.last_generated_outputs['out_file']
 
             # Gradients Extraction
