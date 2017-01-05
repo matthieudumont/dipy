@@ -136,13 +136,13 @@ class DICOMFODFPipelineFSL(CombinedWorkflow):
             # Volume conversion
             dicom_flow = ConvertDicomFlow(**flow_base_params)
             self.run_sub_flow(dicom_flow, dicom_dwi, out_dir=out_dir)
-            dwi = be_flow.last_generated_outputs['out_mask']
+            dwi = dicom_flow.last_generated_outputs['out_mask']
 
             # Gradients Extraction
             gradients_flow = ExtractGradientInfoFlow(**flow_base_params)
             self.run_sub_flow(gradients_flow, dicom_dwi, out_dir=out_dir)
-            bval = be_flow.last_generated_outputs['out_bval']
-            bvec = be_flow.last_generated_outputs['out_bvec']
+            bval = gradients_flow.last_generated_outputs['out_bval']
+            bvec = gradients_flow.last_generated_outputs['out_bvec']
 
             # Masking
             be_flow = BrainExtraction(**flow_base_params)
