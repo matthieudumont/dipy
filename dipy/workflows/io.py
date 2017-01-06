@@ -1,7 +1,5 @@
 import re
-import inspect
 import logging
-import os
 import subprocess
 
 from dipy.workflows.workflow import Workflow
