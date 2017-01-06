@@ -152,7 +152,7 @@ class DICOMFODFPipelineFSL(CombinedWorkflow):
             dwi_mask = be_flow.last_generated_outputs['out_mask']
 
             # Denoising
-            skip_denoise = True
+            skip_denoise = False
             nl_flow = NLMeansFlow(output_strategy=self._output_strategy,
                                   mix_names=self._mix_names,
                                   force=self._force_overwrite,
