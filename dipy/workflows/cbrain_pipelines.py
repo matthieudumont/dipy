@@ -97,6 +97,7 @@ class DICOMFODFPipelineFSL(CombinedWorkflow):
 
     def _get_sub_flows(self):
         return [
+            UncompressFlow,
             ConvertDicomFlow,
             ExtractGradientInfoFlow,
             BrainExtraction,
@@ -147,6 +148,7 @@ class DICOMFODFPipelineFSL(CombinedWorkflow):
 
 
             # Volume conversion
+            print(dicom_dwi)
             dicom_flow = ConvertDicomFlow(**flow_base_params)
             self.run_sub_flow(dicom_flow, dicom_dwi, tag=tag, out_dir=out_dir)
             dwi = dicom_flow.last_generated_outputs['out_file']
