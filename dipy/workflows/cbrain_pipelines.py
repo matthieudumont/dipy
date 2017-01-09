@@ -137,7 +137,7 @@ class DICOMFODFPipelineFSL(CombinedWorkflow):
             dicom_dwi = dicom_dwi[0]
 
             # Check if the input is an archive - uncompress if necessary
-            filename, file_extension = os.path.filext(dicom_dwi)
+            filename, file_extension = os.path.splitext(dicom_dwi)
             if file_extension in ['.tar']:
                 uncompress_flow = UncompressFlow(**flow_base_params)
                 new_dicom_dir = os.path.join(out_dir, 'uncompress')
