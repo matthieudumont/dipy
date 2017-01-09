@@ -1,13 +1,14 @@
 from __future__ import division, print_function, absolute_import
 
-import inspect
+import os
 
 from dipy.workflows.combined_workflow import CombinedWorkflow
 from dipy.workflows.denoise import NLMeansFlow
 from dipy.workflows.reconst import ReconstDtiFlow
 from dipy.workflows.reconst import ReconstCSAFlow, ReconstCSDFlow
 from dipy.workflows.fsl_bet import BrainExtraction
-from dipy.workflows.io import ConvertDicomFlow, ExtractGradientInfoFlow
+from dipy.workflows.io import ConvertDicomFlow, ExtractGradientInfoFlow,\
+    UncompressFlow
 
 
 class FODFPipelineFSL(CombinedWorkflow):
@@ -134,6 +135,16 @@ class DICOMFODFPipelineFSL(CombinedWorkflow):
 
         for dicom_dwi in io_it:
             dicom_dwi = dicom_dwi[0]
+
+            # Check if the input is an archive - uncompress if necessary
+            filename, file_extension = os.path.filext(dicom_dwi)
+            if file_extension in ['.tar']:
+                uncompress_flow = UncompressFlow(**flow_base_params)
+                new_dicom_dir = os.path.join(out_dir, 'uncompress')
+                self.run_sub_flow(uncompress_flow, dicom_dwi,
+                                  out_dir=new_dicom_dir)
+                dicom_dwi = new_dicom_dir
+
 
             # Volume conversion
             dicom_flow = ConvertDicomFlow(**flow_base_params)

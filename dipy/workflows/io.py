@@ -1,6 +1,8 @@
 import re
 import logging
 import subprocess
+import zipfile
+import tarfile
 
 from dipy.workflows.workflow import Workflow
 
@@ -89,6 +91,31 @@ def extract_fsl_gradient(dicom_path, dicom_index, out_bval, out_bvec):
     _, stdout = proc.communicate(input=str(dicom_index))
 
     return '[ERROR]' not in stdout
+
+
+class UncompressFlow(Workflow):
+    @classmethod
+    def get_short_name(cls):
+        return 'extract_gradient'
+
+    def run(self, input_files, out_dir=''):
+        """ Workflow for uncompressing files.
+
+        Parameters
+        ----------
+        input_files : string
+            Path to the compressed files. This path may contain wildcards to
+            process multiple inputs at once.
+        out_dir : string, optional
+            Output directory (default input file directory)
+        """
+        io_it = self.get_io_iterator()
+
+        for filepath in io_it:
+            filepath = filepath[0]
+
+            tar = tarfile.open(filepath)
+            tar.extractall(path=out_dir)
 
 
 class ExtractGradientInfoFlow(Workflow):
