@@ -14,7 +14,7 @@ class MaskFlow(Workflow):
     def get_short_name(cls):
         return 'mask'
 
-    def run(self, input_files, greater_than=0.2, less_than=np.inf, out_dir='',
+    def run(self, input_files, lb, ub=np.inf, out_dir='',
             out_mask='mask.nii.gz'):
 
         """ Workflow for creating a binary mask
@@ -23,21 +23,25 @@ class MaskFlow(Workflow):
         ----------
         input_files : string
            Path to image to be masked.
-        greater_than : float
-            Default is 0.2.
-        less_than : float
-            Default is Inf.
+        lb : float
+            Lower bound value.
+        ub : float
+            Upper bound value (default Inf)
         out_dir : string, optional
            Output directory (default input file directory)
         out_mask : string, optional
            Name of the masked file (default 'mask.nii.gz')
         """
-        io_it = self.get_io_iterator_()
+        if lb >= ub:
+            logging.error('The upper bound(less than) should be greater'
+                          ' than the lower bound (greather_than).')
+            return
+
+        io_it = self.get_io_iterator()
 
         for input_path, out_mask_path in io_it:
-            logging.info('Creating mask of {0}'
-                         .format(input_path))
+            logging.info('Creating mask of {0}'.format(input_path))
             data, affine = load_nifti(input_path)
-            mask = np.bitwise_and(data > greater_than, data < less_than)
+            mask = np.bitwise_and(data > lb, data < ub)
             save_nifti(out_mask_path, mask.astype(np.ubyte), affine)
             logging.info('Mask saved at {0}'.format(out_mask_path))

@@ -95,7 +95,7 @@ class ReconstDtiFlow(Workflow):
             logging.info('Computing DTI metrics for {0}'.format(dwi))
             img = nib.load(dwi)
             data = img.get_data()
-            affine = img.get_affine()
+            affine = img.affine
 
             if mask is None:
                 mask = None

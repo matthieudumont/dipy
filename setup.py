@@ -91,7 +91,8 @@ for modulename, other_sources, language in (
     ('dipy.align.crosscorr', [], 'c'),
     ('dipy.align.bundlemin', [], 'c'),
     ('dipy.align.transforms', [], 'c'),
-    ('dipy.align.parzenhist', [], 'c')):
+    ('dipy.align.parzenhist', [], 'c'),
+    ('dipy.utils.omp', [], 'c')):
 
     pyx_src = pjoin(*modulename.split('.')) + '.pyx'
     EXTS.append(Extension(modulename, [pyx_src] + other_sources,
@@ -217,11 +218,11 @@ def main(**extra_args):
           scripts      = [pjoin('bin', 'dipy_fodf_pipeline'),
                           pjoin('bin', 'dipy_reconst_csd'),
                           pjoin('bin', 'dipy_reconst_csa'),
-                          pjoin('bin', 'dipy_median_otsu'),
-                          pjoin('bin', 'dipy_nlmeans'),
                           pjoin('bin', 'dipy_reconst_dti'),
                           pjoin('bin', 'dipy_reconst_dti_restore'),
-                          pjoin('bin', 'dipy_mask')
+                          pjoin('bin', 'dipy_mask'),
+                          pjoin('bin', 'dipy_median_otsu'),
+                          pjoin('bin', 'dipy_nlmeans')
                           ],
 
           cmdclass = cmdclass,
